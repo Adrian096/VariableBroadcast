@@ -1,0 +1,32 @@
+<form name="dataChange" action="">
+    Value 1:<input id="val1" type="text" name="val1"/><br/><br/>
+    Value 2:<input type="text" name="val2"/><br/><br/>
+    <input type="submit" value="Submit"/>
+</form>
+
+<script> 
+    $("form").on("submit", function(e){
+        var dataString = $(this).serialize();
+        $.ajax({
+            type: "POST",
+            url: "http://localhost:3000/formChange",
+            data: dataString,
+            success: function(data){
+                $("input[type='text']").each(function(i){ $(this).val(''); });
+                $(".errors").remove();
+                console.log("Success!");
+            },
+            error: function (data) { 
+                var r = jQuery.parseJSON(data.responseText);
+                $(".errors").remove();
+                $.each(r.errors, function(i, v){
+                    $("input[name='"+v.param+"']").after("<span style='color:red' class='errors'>"+v.msg+"</span>");
+                    console.log(v);
+                });
+             }
+        });
+        
+        e.preventDefault();
+        
+    });
+</script>

@@ -1,0 +1,15 @@
+<ul id="values"></ul>
+
+<script>
+    $(document).ready(function(){
+        socket.on('update', function (msg) { 
+            console.log('update');
+            let parse = JSON.parse(msg);
+            $('#values').empty();
+            jQuery.each(parse, function (i, val) {
+                $("#values").append("<li>" + val + "</li>");
+            });
+        });
+        socket.emit('update');
+    });
+</script>
