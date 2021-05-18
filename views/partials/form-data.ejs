@@ -16,7 +16,7 @@
                 $(".errors").remove();
                 console.log("Success!");
             },
-            error: function (data) { 
+            error: function (data) {
                 var r = jQuery.parseJSON(data.responseText);
                 $(".errors").remove();
                 $.each(r.errors, function(i, v){
