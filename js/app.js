@@ -21,10 +21,7 @@ fs.readFile('database/' + databaseFile, (err, data_r) => {
     let createData = 
     {
       password: "12345",
-      website_data: {
-        var1: "value1",
-        var2: "value2"
-      }
+      website_data: {}
     }
     fs.writeFileSync('database/' + databaseFile, JSON.stringify(createData));
     data = createData;
@@ -59,7 +56,7 @@ express.static('public'),
 express.json());
 
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 
 
@@ -102,28 +99,36 @@ app.post('/form', (req, res) => {
 });
 
 app.post('/formChange', 
-         [body('val1', 'Min. 3 chars.').trim().isLength({min: 3}).escape(),
-          body('val2', 'Min. 3 chars.').trim().isLength({min: 3}).escape()], 
+         [body('elementName.*', 'Min. 3 chars.').trim().isLength({min: 3}).escape(),
+          body('value.*', 'Min. 3 chars.').trim().isLength({min: 3}).escape(),],
   (req, res) => {
-  const errors = validationResult(req);
-  if(!errors.isEmpty()){
+  if(!req.session.user){
     return res.status(400).json({
-      success: false,
-      errors: errors.array()
+      success: false
+    });
+  }else{
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+    data['website_data'] = {};
+    console.log(req.body);
+    if(req.body.hasOwnProperty('elementName') && req.body.hasOwnProperty('value')){
+      for(let i = 0; i < req.body.elementName.length; i++){
+        data['website_data'][req.body.elementName[i]] = req.body.value[i]; 
+      }
+    } 
+
+    fs.writeFileSync('database/test-database.json', JSON.stringify(data));
+    io.emit('update', JSON.stringify(data.website_data));
+    return res.status(200).json({
+      success: true,
+      message: 'Values changed successful'
     });
   }
-
-  if(req.body.val1)
-    data.website_data.var1 = req.body.val1;
-  if(req.body.val2)
-    data.website_data.var2 = req.body.val2;
-
-  fs.writeFileSync('database/test-database.json', JSON.stringify(data));
-  io.emit('update', JSON.stringify(data.website_data));
-  return res.status(200).json({
-    success: true,
-    message: 'Values changed successful'
-  });
 });
 
 app.post('/getData', (req, res) => {

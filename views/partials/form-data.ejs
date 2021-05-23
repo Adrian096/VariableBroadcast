@@ -1,12 +1,52 @@
-<form name="dataChange" action="">
-    Value 1:<input id="val1" type="text" name="val1"/><br/><br/>
-    Value 2:<input type="text" name="val2"/><br/><br/>
-    <input type="submit" value="Submit"/>
-</form>
+<form id="formChange" name="dataChange" action=""></form>
+<button id='addVal' type='button'>Add</button>
 
 <script> 
+    var elements = [];
+
+    $(document).ready(function(){
+        
+        socket.on("update", function (msg) { 
+            let parse = JSON.parse(msg);
+            $("#formChange").empty();
+
+            jQuery.each(parse, function (i, val) {
+                let uuid = Date.now();
+                let elName = $(`<input type='text' name='elementName[]' value='${i}'/>`)
+                let el1 = $(`<input type='text' name='value[]' value='${val}'/>`);
+                let el2 = $(`<button type='button' onclick='deleteVal(${uuid})'>Delete</button><br/><br/>`);
+                $("#formChange").append(elName);
+                $("#formChange").append(el1);
+                $("#formChange").append(el2);
+                elements[uuid] = {"elementName":elName, "input":el1, "button":el2};
+            });
+
+            $("#formChange").append("<input type='submit' value='Submit'/><br/><br/>");
+         });
+         socket.emit("update");
+        
+        $("#addVal").on("click", function(){
+            let uuid = Date.now();
+            let elName = $("<input type='text' name='elementName[]'/>")
+            let el1 = $("<input type='text' name='value[]'/>");
+            let el2 = $(`<button type='button' onclick='deleteVal(${uuid})'>Delete</button><br/><br/>`);
+            $("input[type='submit']").before(elName);
+            $("input[type='submit']").before(el1);
+            $("input[type='submit']").before(el2);
+            elements[uuid] = {"elementName":elName, "input":el1, "button":el2};
+        });
+    });
+
+    function deleteVal(keyName){
+        elements[keyName].elementName.remove();
+        elements[keyName].input.remove();
+        elements[keyName].button.remove();
+        delete elements[keyName];
+    }
+
     $("form").on("submit", function(e){
-        var dataString = $(this).serialize();
+        e.preventDefault();
+        var dataString = $(this).serializeArray();
         $.ajax({
             type: "POST",
             url: "http://localhost:3000/formChange",
@@ -15,18 +55,31 @@
                 $("input[type='text']").each(function(i){ $(this).val(''); });
                 $(".errors").remove();
                 console.log("Success!");
+                socket.emit('update');
             },
             error: function (data) {
+                var name_map = [];
+
+                $("input[name='elementName[]']").each(function(){
+                    let index = $("input[name='elementName[]']").index(this);
+                    name_map[`elementName[${index}]`] = $(this);
+                });
+                $("input[name='value[]']").each(function(){
+                    let index = $("input[name='value[]']").index(this);
+                    name_map[`value[${index}]`] = $(this);
+                });
+
                 var r = jQuery.parseJSON(data.responseText);
                 $(".errors").remove();
+
                 $.each(r.errors, function(i, v){
-                    $("input[name='"+v.param+"']").after("<span style='color:red' class='errors'>"+v.msg+"</span>");
-                    console.log(v);
+                    name_map[v.param].after(`<span style='color:red' class='errors'>${v.msg}</span>`);
                 });
-             }
+            }
         });
         
-        e.preventDefault();
         
     });
+
+
 </script>

@@ -2,14 +2,13 @@
 
 <script>
     $(document).ready(function(){
-        socket.on('update', function (msg) { 
-            console.log('update');
+        socket.on("update", function (msg) { 
             let parse = JSON.parse(msg);
-            $('#values').empty();
+            $("#values").empty();
             jQuery.each(parse, function (i, val) {
                 $("#values").append("<li>" + val + "</li>");
             });
         });
-        socket.emit('update');
+        socket.emit("update");
     });
 </script>
