@@ -114,7 +114,7 @@ app.post('/formChange',
   }
 
   if(req.body.val1)
-      data.website_data.var1 = req.body.val1;
+    data.website_data.var1 = req.body.val1;
   if(req.body.val2)
     data.website_data.var2 = req.body.val2;
 
