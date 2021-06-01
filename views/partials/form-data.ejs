@@ -1,46 +1,64 @@
-<form id="formChange" name="dataChange" action=""></form>
-<button id='addVal' type='button'>Add</button>
+<form id="formChange" name="dataChange" action="">
+    <div id="formBox">
+        <div class="formRow">
+            <div class="formColumn">Name</div>
+            <div class="formColumn">Value</div>
+            <div class="formColumn"></div>
+        </div>
+    </div>
+    <br/>
+    <input type='submit' value='Submit' class='formSubmitButton'/>
+    <button id='addVal' type='button'>Add</button>
+</form>
 
-<script> 
+<script>
+    function uuidv4() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
     var elements = [];
+    var header = `<div class="formRow header">
+                    <div class="formColumn">Name</div>
+                    <div class="formColumn">Value</div>
+                    <div class="formColumn"/>
+                  </div>`;
 
     $(document).ready(function(){
-        
         socket.on("update", function (msg) { 
             let parse = JSON.parse(msg);
-            $("#formChange").empty();
-
+            $("#formBox").empty();
+            $("#formBox").append(header);
             jQuery.each(parse, function (i, val) {
-                let uuid = Date.now();
-                let elName = $(`<input type='text' name='elementName[]' value='${i}'/>`)
-                let el1 = $(`<input type='text' name='value[]' value='${val}'/>`);
-                let el2 = $(`<button type='button' onclick='deleteVal(${uuid})'>Delete</button><br/><br/>`);
-                $("#formChange").append(elName);
-                $("#formChange").append(el1);
-                $("#formChange").append(el2);
-                elements[uuid] = {"elementName":elName, "input":el1, "button":el2};
+                let uid = uuidv4();
+                let elName  = $(`<div class='formColumn'><input type='text' name='elementName[]' value='${i}' class='formInputName formElement'/></div>`);
+                let el1     = $(`<div class='formColumn'><input type='text' name='value[]' value='${val}' class='formInputValue formElement'/></div>`);
+                let el2     = $(`<div class='formColumn'><button type='button' onclick='deleteVal("${uid}")' class='formDelButton formElement'>Delete</button></div>`);
+                let div     = $("<div class='formRow'>").append(elName, el1, el2);
+                $("#formBox").append(div);
+                elements[uid] = {"elementName":elName, "input":el1, "button":el2, "div":div};
             });
 
-            $("#formChange").append("<input type='submit' value='Submit'/><br/><br/>");
-         });
-         socket.emit("update");
+            //$("#formBox").append("<input type='submit' value='Submit' class='formSubmitButton'/><br/><br/>");
+        });
+        socket.emit("update");
         
         $("#addVal").on("click", function(){
-            let uuid = Date.now();
-            let elName = $("<input type='text' name='elementName[]'/>")
-            let el1 = $("<input type='text' name='value[]'/>");
-            let el2 = $(`<button type='button' onclick='deleteVal(${uuid})'>Delete</button><br/><br/>`);
-            $("input[type='submit']").before(elName);
-            $("input[type='submit']").before(el1);
-            $("input[type='submit']").before(el2);
-            elements[uuid] = {"elementName":elName, "input":el1, "button":el2};
+            let uid = uuidv4();
+            let elName  = $("<div class='formColumn'><input type='text' name='elementName[]' class='formInputName formElement'/></div>")
+            let el1     = $("<div class='formColumn'><input type='text' name='value[]' class='formInputValue formElement'/></div>");
+            let el2     = $(`<div class='formColumn'><button type='button' onclick='deleteVal("${uid}")' class='formDelButton formElement'>Delete</button></div>`);
+            let div     = $("<div class='formRow'>").append(elName, el1, el2);
+            $("#formBox").append(div);
+            elements[uid] = {"elementName":elName, "input":el1, "button":el2, "div":div};
         });
     });
 
+    //remove an element from a form
     function deleteVal(keyName){
-        elements[keyName].elementName.remove();
-        elements[keyName].input.remove();
-        elements[keyName].button.remove();
+        elements[keyName].div.remove();
         delete elements[keyName];
     }
 
@@ -57,7 +75,9 @@
                 console.log("Success!");
                 socket.emit('update');
             },
+            //error handling
             error: function (data) {
+                //associative array (the name of the form element with the index - key, a pointer to a DOM element in the form - value)
                 var name_map = [];
 
                 $("input[name='elementName[]']").each(function(){
@@ -72,6 +92,7 @@
                 var r = jQuery.parseJSON(data.responseText);
                 $(".errors").remove();
 
+                //loop that adds error messages to the form
                 $.each(r.errors, function(i, v){
                     name_map[v.param].after(`<span style='color:red' class='errors'>${v.msg}</span>`);
                 });

@@ -7,7 +7,6 @@ const fs         = require('fs');
 const http       = require('http');
 const server     = http.createServer(app);
 const { Server } = require("socket.io");
-const bodyParser = require('body-parser');
 const io         = new Server(server);
 
 
@@ -99,6 +98,7 @@ app.post('/form', (req, res) => {
 });
 
 app.post('/formChange', 
+         //form validation
          [body('elementName.*', 'Min. 3 chars.').trim().isLength({min: 3}).escape(),
           body('value.*', 'Min. 3 chars.').trim().isLength({min: 3}).escape(),],
   (req, res) => {
